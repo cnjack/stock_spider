@@ -12,7 +12,7 @@ type KLine struct {
 }
 
 type Trend struct {
-	Time    time.Time `json:"time"`
+	Time    time.Time `json:"time" time_format:"15:04"`
 	Price   float64   `json:"price"`
 	Volume  int64     `json:"volume"`
 	Incrace float64   `json:"incrace"`
@@ -24,13 +24,13 @@ const (
 	FiveMinutes    Type = "5min"
 	FifteenMinutes Type = "15min"
 	ThirtyMinutes  Type = "30min"
+	OneHour        Type = "1h"
 	OneDay         Type = "1d"
 	OneWeek        Type = "1w"
 	OneMonth       Type = "1m"
-	OneHour        Type = "1h"
 )
 
 type Stock interface {
-	Kline(stockCode string, t Type, start, end time.Time) ([]*KLine, error)
-	Trend(stockCode string) ([]*Trend, error)
+	KLine(stockCode string, t Type, start, end time.Time) ([]*KLine, error)
+	Trend(stockCode string, day int, showBefore bool) ([]*Trend, error)
 }

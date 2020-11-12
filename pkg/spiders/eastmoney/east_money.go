@@ -30,6 +30,8 @@ type EastMoneyProvider struct {
 	httpClient *http.Client
 }
 
+var _ spiders.Stock = new(EastMoneyProvider)
+
 type EastMoneyKLine struct {
 	Data struct {
 		KLines []string `json:"klines"`
@@ -117,7 +119,7 @@ func (p *EastMoneyProvider) KLine(stockCode string, t spiders.Type, start, end t
 	return kline, nil
 }
 
-func (p *EastMoneyProvider) Trend(stockCode string) ([]*spiders.Trend, error) {
+func (p *EastMoneyProvider) Trend(stockCode string, day int, showBefore bool) ([]*spiders.Trend, error) {
 	if p.httpClient == nil {
 		p.httpClient = httpClient
 	}
@@ -125,8 +127,12 @@ func (p *EastMoneyProvider) Trend(stockCode string) ([]*spiders.Trend, error) {
 	param.Set("secid", stockCode)
 	param.Set("fields1", "f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13")
 	param.Set("fields2", "f51,f52,f53,f54,f55,f56,f57,f58")
-	param.Set("iscr", "0")
-	param.Set("ndays", "1")
+	iscr := "0"
+	if showBefore {
+		iscr = "1"
+	}
+	param.Set("iscr", iscr)
+	param.Set("ndays", strconv.Itoa(day))
 	u := fmt.Sprintf("%s%s?%s", easyMoneyAPI, "/qt/stock/trends2/get", param.Encode())
 	req, err := http.NewRequest(http.MethodGet, u, nil)
 	if err != nil {

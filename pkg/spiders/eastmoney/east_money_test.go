@@ -28,7 +28,7 @@ func TestEastMoneyProvider_KLine(t *testing.T) {
 
 func TestEastMoneyProvider_Trend(t *testing.T) {
 	spider := &eastmoney.EastMoneyProvider{}
-	data, err := spider.Trend("1.600350")
+	data, err := spider.Trend("1.600350", 2, true)
 	if assert.NoError(t, err) {
 		out, _ := json.Marshal(data)
 		t.Log(string(out))
