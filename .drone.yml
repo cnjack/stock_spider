@@ -1,0 +1,22 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: test
+    image: golang:1.13
+    commands:
+      - go test -v ./...
+
+  - name: docker_build
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: docker_name
+      password:
+        from_secret: docker_pass
+      repo: cnjackhack/stock_spider
+      force_tag: true
+      tags:
+        - latest
+        - ${DRONE_COMMIT_BRANCH}_${DRONE_COMMIT_SHA:0:8}
