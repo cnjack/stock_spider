@@ -6,7 +6,7 @@ ADD . /code
 WORKDIR /code
 
 # build the source
-RUN go build -o spider cmd/main.go
+RUN GOSUMDB=off go build -o spider internal/cmd/main.go
 
 # use a minimal alpine image
 FROM alpine:3.12
