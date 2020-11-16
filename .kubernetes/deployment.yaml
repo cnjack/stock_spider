@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: stock
-        image: cnjackhack/stock_spider:{{build.branch}}_{{substr build.commit 0 8}}
+        image: cnjackhack/stock_spider:{{commit_branch}}_{{substr commit_sha 0 8}}
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
