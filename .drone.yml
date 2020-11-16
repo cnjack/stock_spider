@@ -21,7 +21,7 @@ steps:
         - latest
         - ${DRONE_COMMIT_BRANCH}_${DRONE_COMMIT_SHA:0:8}
   - name: deployment
-    image: cnjackhack/drone-plugin-kube:0.0.1
+    image: cnjackhack/drone-plugin-kube:0.0.2
     settings:
       template: .kubernetes/deployment.yaml
       ca: 
