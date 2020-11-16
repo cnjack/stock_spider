@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock
+  namespace: stock
+  labels:
+    app: stock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stock
+  template:
+    metadata:
+      labels:
+        app: stock
+    spec:
+      containers:
+      - name: stock
+        image: cnjackhack/stock_spider:{{build.branch}}_{{substr build.commit 0 8}}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080

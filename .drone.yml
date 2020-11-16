@@ -20,3 +20,15 @@ steps:
       tags:
         - latest
         - ${DRONE_COMMIT_BRANCH}_${DRONE_COMMIT_SHA:0:8}
+  - name: deployment
+    image: cnjackhack/drone-plugin-kube:0.0.1
+    settings:
+      template: .kubernetes/deployment.yaml
+      ca: 
+        from_secret: KUBERNETES_CERT
+      server:
+        from_secret: KUBERNETES_SERVER
+      token:
+        from_secret: KUBERNETES_TOKEN
+      namespace: stock
+      skip_tls: 'false'
