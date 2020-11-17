@@ -2,6 +2,8 @@ package apis
 
 import (
 	"net/http"
+	"stock/pkg/spiders"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -70,5 +72,48 @@ func (c *Controller) Search(ctx *gin.Context) {
 		"code": 0,
 		"msg":  "",
 		"data": stocks,
+	})
+}
+
+type KLineRequest struct {
+	Code      string       `json:"code" form:"code" binding:"required"`
+	Type      spiders.Type `json:"type" form:"type"`
+	StartTime time.Time    `json:"start_time" form:"start_time" binding:"required" time_format:"2006-01-02 15:04:05"`
+	EndTime   time.Time    `json:"end_time" form:"end_time" time_format:"2006-01-02 15:04:05"`
+}
+
+func (c *Controller) KLine(ctx *gin.Context) {
+	params := new(KLineRequest)
+	if err := ctx.Bind(params); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code": "400",
+			"msg":  err.Error(),
+		})
+		return
+	}
+	if params.Type == "" {
+		params.Type = spiders.OneHour
+	}
+	if params.EndTime.IsZero() {
+		params.EndTime = time.Now()
+	}
+	kline, err := c.service.KLine(params.Code, params.Type, params.StartTime, params.EndTime)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":       params.Code,
+			"type":       params.Type,
+			"start_time": params.StartTime,
+			"end_time":   params.EndTime,
+		}).Error(err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"code": "500",
+			"msg":  "service internal error",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "",
+		"data": kline,
 	})
 }

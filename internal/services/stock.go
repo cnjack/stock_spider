@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"stock/internal/entities"
 	"stock/pkg/spiders"
 	"time"
@@ -16,8 +15,29 @@ func NewService(s spiders.IStock) *StockImpl {
 }
 
 func (s *StockImpl) KLine(stockCode string, t spiders.Type, start, end time.Time) (*entities.KLine, error) {
-	return nil, errors.New("not implementation")
-	// data, err := s.KLine(stockCode, t, start, end)
+	data, err := s.IStock.KLine(stockCode, t, start, end)
+	if err != nil {
+		return nil, err
+	}
+	kline := &entities.KLine{
+		Labels: make([]string, len(data)),
+		KLine:  make([][]float64, len(data)),
+	}
+	for i, item := range data {
+		if t == spiders.OneHour || t == spiders.ThirtyMinutes || t == spiders.FifteenMinutes || t == spiders.FiveMinutes {
+			kline.Labels[i] = item.Time.Format("15:04")
+		} else {
+			kline.Labels[i] = item.Time.Format("2006-01-02")
+		}
+
+		kline.KLine[i] = []float64{
+			item.Open,
+			item.Close,
+			item.High,
+			item.Low,
+		}
+	}
+	return kline, nil
 }
 
 func (s *StockImpl) Trend(stockCode string, day int, showBefore bool) ([]*spiders.Trend, error) {

@@ -22,6 +22,7 @@ func Route(port string) {
 	ctl := NewController(service)
 
 	router.GET("trend", ctl.Trend)
+	router.GET("kline", ctl.KLine)
 	router.POST("search", ctl.Search)
 	router.GET("search", ctl.Search)
 
