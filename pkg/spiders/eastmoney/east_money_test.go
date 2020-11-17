@@ -34,3 +34,12 @@ func TestEastMoneyProvider_Trend(t *testing.T) {
 		t.Log(string(out))
 	}
 }
+
+func TestEastMoneyProvider_Search(t *testing.T) {
+	spider := &eastmoney.EastMoneyProvider{}
+	data, err := spider.Search("600350")
+	if assert.NoError(t, err) {
+		out, _ := json.Marshal(data)
+		t.Log(string(out))
+	}
+}

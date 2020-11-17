@@ -22,6 +22,8 @@ func Route(port string) {
 	ctl := NewController(service)
 
 	router.GET("trend", ctl.Trend)
+	router.POST("search", ctl.Search)
+	router.GET("search", ctl.Search)
 
 	if err := router.Run(port); err != nil {
 		logrus.Panicln(err)

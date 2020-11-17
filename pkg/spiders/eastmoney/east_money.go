@@ -20,17 +20,18 @@ var httpClient = &http.Client{
 }
 
 const (
-	easyMoneyAPI    = "http://push2his.eastmoney.com/api"
-	timeFormat      = "20060102"
-	minTimeFormat   = "2006-01-02 15:04"
-	kLineTimeFormat = "2006-01-02"
+	easyMoneyAPI       = "http://push2his.eastmoney.com/api"
+	easyMoneySearchAPI = "http://searchapi.eastmoney.com/api/"
+	timeFormat         = "20060102"
+	minTimeFormat      = "2006-01-02 15:04"
+	kLineTimeFormat    = "2006-01-02"
 )
 
 type EastMoneyProvider struct {
 	httpClient *http.Client
 }
 
-var _ spiders.Stock = new(EastMoneyProvider)
+var _ spiders.IStock = new(EastMoneyProvider)
 
 type EastMoneyKLine struct {
 	Data struct {
@@ -42,6 +43,15 @@ type EastMoneyTrends struct {
 	Data struct {
 		Close  float64  `json:"preClose"`
 		Trends []string `json:"trends"`
+	} `json:"data"`
+}
+
+type EastMoneyStockSearch struct {
+	Data []struct {
+		Name             string `json:"Name"`
+		Code             string `json:"Code"`
+		MktNum           string `json:"MktNum"`
+		SecurityTypeName string `json:"SecurityTypeName"`
 	} `json:"data"`
 }
 
@@ -180,6 +190,49 @@ func (p *EastMoneyProvider) Trend(stockCode string, day int, showBefore bool) ([
 		}
 	}
 	return trends, nil
+}
+
+func (p *EastMoneyProvider) Search(key string) ([]*spiders.Stock, error) {
+	if p.httpClient == nil {
+		p.httpClient = httpClient
+	}
+	param := url.Values{}
+	param.Set("and14", fmt.Sprintf("MultiMatch/Name,Code,PinYin/%s/true", key))
+	param.Set("type", "14")
+	param.Set("appid", "el1902262")
+	param.Set("token", "CCSDCZSDCXYMYZYYSYYXSMDDSMDHHDJT")
+	param.Set("returnfields14", "Name,Code,MktNum,SecurityTypeName")
+	param.Set("pageIndex14", "1")
+	param.Set("pageSize14", "20")
+	u := fmt.Sprintf("%s%s?%s", easyMoneySearchAPI, "Info/Search", param.Encode())
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	decoder := json.NewDecoder(resp.Body)
+	var ed = new(EastMoneyStockSearch)
+	err = decoder.Decode(ed)
+	if err != nil {
+		return nil, err
+	}
+	if len(ed.Data) == 0 {
+		return make([]*spiders.Stock, 0), nil
+	}
+	stocks := make([]*spiders.Stock, len(ed.Data))
+	for i := range ed.Data {
+		stocks[i] = &spiders.Stock{
+			Name:         ed.Data[i].Name,
+			Code:         ed.Data[i].Code,
+			InternalCode: fmt.Sprintf("%s.%s", ed.Data[i].MktNum, ed.Data[i].Code),
+			Type:         ed.Data[i].SecurityTypeName,
+		}
+	}
+	return stocks, nil
 }
 
 func (p *EastMoneyProvider) getKLTFromType(t spiders.Type) string {

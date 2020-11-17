@@ -8,10 +8,10 @@ import (
 )
 
 type StockImpl struct {
-	spiders.Stock
+	spiders.IStock
 }
 
-func NewService(s spiders.Stock) *StockImpl {
+func NewService(s spiders.IStock) *StockImpl {
 	return &StockImpl{s}
 }
 
@@ -21,5 +21,9 @@ func (s *StockImpl) KLine(stockCode string, t spiders.Type, start, end time.Time
 }
 
 func (s *StockImpl) Trend(stockCode string, day int, showBefore bool) ([]*spiders.Trend, error) {
-	return s.Stock.Trend(stockCode, day, showBefore)
+	return s.IStock.Trend(stockCode, day, showBefore)
+}
+
+func (s *StockImpl) Search(key string) ([]*spiders.Stock, error) {
+	return s.IStock.Search(key)
 }

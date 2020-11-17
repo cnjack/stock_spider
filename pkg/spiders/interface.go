@@ -18,6 +18,13 @@ type Trend struct {
 	Incrace float64   `json:"incrace"`
 }
 
+type Stock struct {
+	Name         string `json:"name"`
+	Code         string `json:"code"`
+	InternalCode string `json:"internal_code"`
+	Type         string `json:"type"`
+}
+
 type Type string
 
 const (
@@ -30,7 +37,8 @@ const (
 	OneMonth       Type = "1m"
 )
 
-type Stock interface {
+type IStock interface {
 	KLine(stockCode string, t Type, start, end time.Time) ([]*KLine, error)
 	Trend(stockCode string, day int, showBefore bool) ([]*Trend, error)
+	Search(key string) ([]*Stock, error)
 }
