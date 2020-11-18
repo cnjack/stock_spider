@@ -43,3 +43,12 @@ func TestEastMoneyProvider_Search(t *testing.T) {
 		t.Log(string(out))
 	}
 }
+
+func TestEastMoneyProvider_Stock(t *testing.T) {
+	spider := &eastmoney.EastMoneyProvider{}
+	data, err := spider.Stock("0.300059")
+	if assert.NoError(t, err) {
+		out, _ := json.Marshal(data)
+		t.Log(string(out))
+	}
+}

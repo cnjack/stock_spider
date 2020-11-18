@@ -47,3 +47,7 @@ func (s *StockImpl) Trend(stockCode string, day int, showBefore bool) ([]*spider
 func (s *StockImpl) Search(key string) ([]*spiders.Stock, error) {
 	return s.IStock.Search(key)
 }
+
+func (s *StockImpl) Stock(code string) (*spiders.StockWithDetail, error) {
+	return s.IStock.Stock(code)
+}

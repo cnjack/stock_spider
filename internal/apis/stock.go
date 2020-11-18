@@ -40,7 +40,7 @@ func (c *Controller) Trend(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "",
-		"data": trends,
+		"list": trends,
 	})
 }
 
@@ -71,7 +71,7 @@ func (c *Controller) Search(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"code": 0,
 		"msg":  "",
-		"data": stocks,
+		"list": stocks,
 	})
 }
 
@@ -115,5 +115,36 @@ func (c *Controller) KLine(ctx *gin.Context) {
 		"code": 0,
 		"msg":  "",
 		"data": kline,
+	})
+}
+
+type StockRequest struct {
+	Code string `json:"code" form:"code"`
+}
+
+func (c *Controller) Stock(ctx *gin.Context) {
+	params := new(StockRequest)
+	if err := ctx.Bind(params); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code": "400",
+			"msg":  err.Error(),
+		})
+		return
+	}
+	stock, err := c.service.Stock(params.Code)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code": params.Code,
+		}).Error(err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"code": "500",
+			"msg":  "service internal error",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "",
+		"data": stock,
 	})
 }

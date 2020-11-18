@@ -25,6 +25,7 @@ func Route(port string) {
 	gRouter.GET("trend", ctl.Trend)
 	gRouter.GET("kline", ctl.KLine)
 	gRouter.GET("search", ctl.Search)
+	gRouter.GET("stock", ctl.Stock)
 
 	if err := router.Run(port); err != nil {
 		logrus.Panicln(err)
