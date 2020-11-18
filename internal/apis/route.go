@@ -20,11 +20,11 @@ func Route(port string) {
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	service := services.NewService(&eastmoney.EastMoneyProvider{})
 	ctl := NewController(service)
+	gRouter := router.Group("/api")
 
-	router.GET("trend", ctl.Trend)
-	router.GET("kline", ctl.KLine)
-	router.POST("search", ctl.Search)
-	router.GET("search", ctl.Search)
+	gRouter.GET("trend", ctl.Trend)
+	gRouter.GET("kline", ctl.KLine)
+	gRouter.GET("search", ctl.Search)
 
 	if err := router.Run(port); err != nil {
 		logrus.Panicln(err)
