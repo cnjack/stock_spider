@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"net/http"
 	"stock/internal/services"
 	"stock/pkg/spiders"
 
@@ -20,9 +21,15 @@ func Route(port string) {
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
 	service := services.NewService(&spiders.EastMoneyProvider{})
 	ctl := NewController(service)
+
+	router.GET("health", func(context *gin.Context) {
+		context.Status(http.StatusOK)
+	})
+
 	gRouter := router.Group("/api")
 
 	gRouter.GET("trend", ctl.Trend)
+
 	gRouter.GET("kline", ctl.KLine)
 	gRouter.GET("search", ctl.Search)
 	gRouter.GET("stock", ctl.Stock)
