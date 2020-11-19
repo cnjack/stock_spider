@@ -148,3 +148,34 @@ func (c *Controller) Stock(ctx *gin.Context) {
 		"data": stock,
 	})
 }
+
+type MultiStockRequest struct {
+	Codes []string `json:"codes" form:"codes"`
+}
+
+func (c *Controller) MultiStock(ctx *gin.Context) {
+	params := new(MultiStockRequest)
+	if err := ctx.Bind(params); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code": "400",
+			"msg":  err.Error(),
+		})
+		return
+	}
+	stocks, err := c.service.MultiStock(params.Codes)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code": params.Codes,
+		}).Error(err)
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"code": "500",
+			"msg":  "service internal error",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "",
+		"list": stocks,
+	})
+}

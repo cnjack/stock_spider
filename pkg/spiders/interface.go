@@ -30,6 +30,22 @@ type Stock struct {
 	Type         string `json:"type"`
 }
 
+// f2: now price  f3: gains f5 成交量 f6: 成交额 f9 市盈 f12: internal_code f14 name f15 最高 f16 最低 f17今开 f18 昨收 f20 总市值 f21 流通市值 f23市净值
+type MultiStock struct {
+	Stock
+	Price          float64 `json:"price"`
+	Gains          float64 `json:"gains"`
+	TrendVolume    float64 `json:"trend_volume"`    // 交易量
+	TurnoverAmount float64 `json:"turnover_amount"` // 成交额
+	High           float64 `json:"high"`            // 最高
+	Low            float64 `json:"low"`             // 最低
+	Open           float64 `json:"open"`            // 今开
+	Close          float64 `json:"close"`           // 昨收
+	TotalValue     float64 `json:"total_value"`     // 总市值
+	Circulation    float64 `json:"circulation"`     // 流通值
+	PBRatio        float64 `json:"pb_ratio"`        // 市净率
+}
+
 type StockWithDetail struct {
 	Stock
 	Gains          float64 `json:"gains"`           // 涨幅
@@ -65,4 +81,5 @@ type IStock interface {
 	Trend(stockCode string, day int, showBefore bool) ([]*Trend, error)
 	Search(key string) ([]*Stock, error)
 	Stock(code string) (*StockWithDetail, error)
+	MultiStock(codes []string) ([]*MultiStock, error)
 }

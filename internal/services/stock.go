@@ -51,3 +51,7 @@ func (s *StockImpl) Search(key string) ([]*spiders.Stock, error) {
 func (s *StockImpl) Stock(code string) (*spiders.StockWithDetail, error) {
 	return s.IStock.Stock(code)
 }
+
+func (s *StockImpl) MultiStock(codes []string) ([]*spiders.MultiStock, error) {
+	return s.IStock.MultiStock(codes)
+}

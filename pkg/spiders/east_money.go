@@ -1,4 +1,4 @@
-package eastmoney
+package spiders
 
 import (
 	"encoding/json"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"stock/pkg/spiders"
 	"strconv"
 	"strings"
 	"time"
@@ -31,7 +30,7 @@ type EastMoneyProvider struct {
 	httpClient *http.Client
 }
 
-var _ spiders.IStock = new(EastMoneyProvider)
+var _ IStock = new(EastMoneyProvider)
 
 type EastMoneyKLine struct {
 	Data struct {
@@ -39,8 +38,29 @@ type EastMoneyKLine struct {
 	} `json:"data"`
 }
 
+func (p *EastMoneyProvider) getKLTFromType(t Type) string {
+	switch t {
+	case FiveMinutes:
+		return "5"
+	case FifteenMinutes:
+		return "15"
+	case ThirtyMinutes:
+		return "30"
+	case OneHour:
+		return "60"
+	case OneDay:
+		return "101"
+	case OneWeek:
+		return "102"
+	case OneMonth:
+		return "103"
+	default:
+		return "101"
+	}
+}
+
 // https://blog.csdn.net/weixin_40929065/article/details/101053773
-func (p *EastMoneyProvider) KLine(stockCode string, t spiders.Type, start, end time.Time) ([]*spiders.KLine, error) {
+func (p *EastMoneyProvider) KLine(stockCode string, t Type, start, end time.Time) ([]*KLine, error) {
 	if p.httpClient == nil {
 		p.httpClient = httpClient
 	}
@@ -69,16 +89,16 @@ func (p *EastMoneyProvider) KLine(stockCode string, t spiders.Type, start, end t
 		return nil, err
 	}
 	if len(ed.Data.KLines) == 0 {
-		return make([]*spiders.KLine, 0), nil
+		return make([]*KLine, 0), nil
 	}
-	kline := make([]*spiders.KLine, len(ed.Data.KLines))
+	kline := make([]*KLine, len(ed.Data.KLines))
 	for i := range ed.Data.KLines {
 		line := strings.Split(ed.Data.KLines[i], ",")
 		if len(line) != 8 {
 			return nil, fmt.Errorf("invalid data line [%s]", ed.Data.KLines[i])
 		}
 		timeLayout := kLineTimeFormat
-		if t == spiders.FifteenMinutes || t == spiders.FiveMinutes || t == spiders.ThirtyMinutes || t == spiders.OneHour {
+		if t == FifteenMinutes || t == FiveMinutes || t == ThirtyMinutes || t == OneHour {
 			timeLayout = minTimeFormat
 		}
 		klineTime, err := time.ParseInLocation(timeLayout, line[0], time.Local)
@@ -101,7 +121,7 @@ func (p *EastMoneyProvider) KLine(stockCode string, t spiders.Type, start, end t
 		if err != nil {
 			return nil, fmt.Errorf("invalid low data line [%s]", ed.Data.KLines[i])
 		}
-		kline[i] = &spiders.KLine{
+		kline[i] = &KLine{
 			Open:  open,
 			Close: closePrice,
 			High:  high,
@@ -120,7 +140,7 @@ type EastMoneyTrends struct {
 	} `json:"data"`
 }
 
-func (p *EastMoneyProvider) Trend(stockCode string, day int, showBefore bool) ([]*spiders.Trend, error) {
+func (p *EastMoneyProvider) Trend(stockCode string, day int, showBefore bool) ([]*Trend, error) {
 	if p.httpClient == nil {
 		p.httpClient = httpClient
 	}
@@ -151,9 +171,9 @@ func (p *EastMoneyProvider) Trend(stockCode string, day int, showBefore bool) ([
 		return nil, err
 	}
 	if len(ed.Data.Trends) == 0 {
-		return make([]*spiders.Trend, 0), nil
+		return make([]*Trend, 0), nil
 	}
-	trends := make([]*spiders.Trend, len(ed.Data.Trends))
+	trends := make([]*Trend, len(ed.Data.Trends))
 	for i := range ed.Data.Trends {
 		line := strings.Split(ed.Data.Trends[i], ",")
 		if len(line) != 8 {
@@ -173,7 +193,7 @@ func (p *EastMoneyProvider) Trend(stockCode string, day int, showBefore bool) ([
 			return nil, fmt.Errorf("invalid open data line [%s]", ed.Data.Trends[i])
 		}
 
-		trends[i] = &spiders.Trend{
+		trends[i] = &Trend{
 			Time:    trendTime,
 			Price:   price,
 			Volume:  volume,
@@ -192,7 +212,7 @@ type EastMoneyStockSearch struct {
 	} `json:"data"`
 }
 
-func (p *EastMoneyProvider) Search(key string) ([]*spiders.Stock, error) {
+func (p *EastMoneyProvider) Search(key string) ([]*Stock, error) {
 	if p.httpClient == nil {
 		p.httpClient = httpClient
 	}
@@ -221,11 +241,11 @@ func (p *EastMoneyProvider) Search(key string) ([]*spiders.Stock, error) {
 		return nil, err
 	}
 	if len(ed.Data) == 0 {
-		return make([]*spiders.Stock, 0), nil
+		return make([]*Stock, 0), nil
 	}
-	stocks := make([]*spiders.Stock, len(ed.Data))
+	stocks := make([]*Stock, len(ed.Data))
 	for i := range ed.Data {
-		stocks[i] = &spiders.Stock{
+		stocks[i] = &Stock{
 			Name:         ed.Data[i].Name,
 			Code:         ed.Data[i].Code,
 			InternalCode: fmt.Sprintf("%s.%s", ed.Data[i].MktNum, ed.Data[i].Code),
@@ -265,9 +285,9 @@ func intToFloat64(in int64) float64 {
 // f43 涨幅  f44 最高 f45 最低 f46 今开 f60 昨收 f47 成交量 f48 成交额 f50 量比 f51 涨停 f52 跌停 f57 code f58 name:
 // f117 流通值 f116 总市值 f167 市净率 f168 换手  f128 板块 f107 start
 
-func (s *EastMoneyStock) ToStockWithDetail() *spiders.StockWithDetail {
-	return &spiders.StockWithDetail{
-		Stock: spiders.Stock{
+func (s *EastMoneyStock) ToStockWithDetail() *StockWithDetail {
+	return &StockWithDetail{
+		Stock: Stock{
 			Name:         s.Data.F58,
 			Code:         s.Data.F57,
 			InternalCode: strconv.Itoa(s.Data.F107) + s.Data.F57,
@@ -290,7 +310,7 @@ func (s *EastMoneyStock) ToStockWithDetail() *spiders.StockWithDetail {
 	}
 }
 
-func (p *EastMoneyProvider) Stock(code string) (*spiders.StockWithDetail, error) {
+func (p *EastMoneyProvider) Stock(code string) (*StockWithDetail, error) {
 	if p.httpClient == nil {
 		p.httpClient = httpClient
 	}
@@ -317,23 +337,81 @@ func (p *EastMoneyProvider) Stock(code string) (*spiders.StockWithDetail, error)
 	return s.ToStockWithDetail(), nil
 }
 
-func (p *EastMoneyProvider) getKLTFromType(t spiders.Type) string {
-	switch t {
-	case spiders.FiveMinutes:
-		return "5"
-	case spiders.FifteenMinutes:
-		return "15"
-	case spiders.ThirtyMinutes:
-		return "30"
-	case spiders.OneHour:
-		return "60"
-	case spiders.OneDay:
-		return "101"
-	case spiders.OneWeek:
-		return "102"
-	case spiders.OneMonth:
-		return "103"
-	default:
-		return "101"
+type EastMoneyMultiStockItem struct {
+	F2  int64   `json:"F2"`
+	F3  int64   `json:"F3"`
+	F5  int64   `json:"F5"`
+	F6  float64 `json:"F6"`
+	F9  int64   `json:"F9"`
+	F12 string  `json:"F12"`
+	F13 int     `json:"F13"`
+	F14 string  `json:"F14"`
+	F15 int64   `json:"F15"`
+	F16 int64   `json:"F16"`
+	F17 int64   `json:"F17"`
+	F18 int64   `json:"F18"`
+	F20 int64   `json:"F20"`
+	F21 int64   `json:"F21"`
+	F23 int64   `json:"F23"`
+}
+
+// f2: now price  f3: gains f5 成交量 f6: 成交额 f9 市盈 f12: internal_code f13 market numb f14 name f15 最高 f16 最低 f17今开 f18 昨收 f20 总市值 f21 流通市值 f23 市净值
+// https://blog.csdn.net/qq_38704184/article/details/101292802
+
+func (ms *EastMoneyMultiStockItem) ToMultiStock() *MultiStock {
+	return &MultiStock{
+		Stock: Stock{
+			Name:         ms.F14,
+			Code:         ms.F12,
+			InternalCode: strconv.Itoa(ms.F13) + "." + ms.F12,
+		},
+		Price:          intToFloat64(ms.F2),
+		Gains:          intToFloat64(ms.F3),
+		TrendVolume:    intToFloat64(ms.F5),
+		TurnoverAmount: ms.F6,
+		High:           intToFloat64(ms.F15),
+		Low:            intToFloat64(ms.F16),
+		Open:           intToFloat64(ms.F17),
+		Close:          intToFloat64(ms.F18),
+		TotalValue:     intToFloat64(ms.F20),
+		Circulation:    intToFloat64(ms.F21),
+		PBRatio:        intToFloat64(ms.F23),
 	}
+}
+
+type EastMoneyMultiStock struct {
+	Data struct {
+		Diff map[string]*EastMoneyMultiStockItem `json:"diff"`
+	} `json:"data"`
+}
+
+func (p *EastMoneyProvider) MultiStock(codes []string) ([]*MultiStock, error) {
+	if p.httpClient == nil {
+		p.httpClient = httpClient
+	}
+	param := url.Values{}
+	param.Set("pi", "0")
+	param.Set("fs", fmt.Sprintf("i:%s", strings.Join(codes, ",i:")))
+	param.Set("fields", "f2,f3,f5,f6,f9,f12,f13,f14,f15,f16,f17,f18,f19,f20,f21,f22,f23")
+	u := fmt.Sprintf("%s%s?%s", easyMoneyAPI, "qt/clist/get", param.Encode())
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	decoder := json.NewDecoder(resp.Body)
+	var s = new(EastMoneyMultiStock)
+	err = decoder.Decode(s)
+	if err != nil {
+		return nil, err
+	}
+	ms := make([]*MultiStock, 0)
+	for key := range s.Data.Diff {
+		ms = append(ms, s.Data.Diff[key].ToMultiStock())
+	}
+	return ms, nil
 }

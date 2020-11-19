@@ -2,7 +2,7 @@ package apis
 
 import (
 	"stock/internal/services"
-	"stock/pkg/spiders/eastmoney"
+	"stock/pkg/spiders"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
@@ -18,7 +18,7 @@ func Route(port string) {
 	router.Use(cors.New(corsConfig))
 
 	router.Use(gzip.Gzip(gzip.DefaultCompression))
-	service := services.NewService(&eastmoney.EastMoneyProvider{})
+	service := services.NewService(&spiders.EastMoneyProvider{})
 	ctl := NewController(service)
 	gRouter := router.Group("/api")
 
@@ -26,6 +26,7 @@ func Route(port string) {
 	gRouter.GET("kline", ctl.KLine)
 	gRouter.GET("search", ctl.Search)
 	gRouter.GET("stock", ctl.Stock)
+	gRouter.GET("multi_stock", ctl.MultiStock)
 
 	if err := router.Run(port); err != nil {
 		logrus.Panicln(err)
