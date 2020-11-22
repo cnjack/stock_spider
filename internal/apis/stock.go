@@ -150,7 +150,7 @@ func (c *Controller) Stock(ctx *gin.Context) {
 }
 
 type MultiStockRequest struct {
-	Codes []string `json:"codes" form:"codes"`
+	Codes []string `json:"codes" form:"codes[]"`
 }
 
 func (c *Controller) MultiStock(ctx *gin.Context) {
